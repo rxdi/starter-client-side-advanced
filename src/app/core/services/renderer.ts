@@ -1,4 +1,4 @@
-import { Service } from "@rxdi/core";
+import { Service, Inject } from "@rxdi/core";
 
 export class NodeData {
     text: string;
@@ -9,10 +9,11 @@ export class NodeData {
     }
 }
 
-@Service()
+@Service({ init: true })
 export class RendererService {
-    constructor(
 
+    constructor(
+        @Inject('ipfsDownloadedFactory') public ipfsDownloadedFactory: {testKey: () => string}
     ) {
         console.log("My awesome app!");
         const NODE_DATA_KEY = '__ID_Data__';
@@ -108,7 +109,8 @@ export class RendererService {
         function render(data) {
             elementOpen('h1');
             {
-                text('Hello, ' + data.user)
+                text('Hello from, ' + data.user)
+                text('\n and ' + data.ipfs)
             }
             elementClose('h1');
             elementOpen('ul')
@@ -142,7 +144,8 @@ export class RendererService {
         });
 
         const data = {
-            user: 'Alexey',
+            user: `@rxdi and IDOM`,
+            ipfs: `result from ipfs dynamic factory '${this.ipfsDownloadedFactory.testKey()}'`,
             counter: 1
         };
 

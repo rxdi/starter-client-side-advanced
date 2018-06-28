@@ -4,12 +4,13 @@
   "main": "src/main.ts",
   "scripts": {
     "start": "parcel ./src/index.html --target browser",
-    "build": "parcel build ./src/index.html --target browser"
+    "build": "parcel build ./src/index.html --target browser",
+    "clean": "rm -rf .cache && rm -rf dist"
   },
   "author": "Kristiyan Tachev",
   "license": "MIT",
   "dependencies": {
-    "@rxdi/core": "0.0.73",
+    "@rxdi/core": "^0.0.148",
     "react": "^16.4.1",
     "react-addons-shallow-compare": "^15.6.2",
     "react-dom": "^16.4.1"

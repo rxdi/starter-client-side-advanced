@@ -1,8 +1,9 @@
-# @rxdi/starter-client-side
+# @rxdi/starter-client-side-advanced
 ## Starter project with React and Incremental DOM based on @rxdi/core
 ## Powerful Dependency Injection inside Browser and Node using Typescript and RXJS 6
 ***
-> The idea behind [@rxdi](https://github.com/rxdi) is to create independent, dependency injection that can be used everywhere.
+> The idea behind [@rxdi](https://github.com/rxdi) is to create independent, dependency injection that can be used everywhere,
+> Node and Browser with purpose also to share the same code without chainging nothing!
 > First steps where with platform called [@gapi](https://github.com/Stradivario/gapi) you can check repository [@gapi/core](https://github.com/Stradivario/gapi-core).
 > Then because of the needs of the platform i decided to develop this Reactive Dependency Injection container helping me build progressive applications.
 > Hope you like my journey!
@@ -14,7 +15,7 @@ Main repository [@rxdi/core](https://github.com/rxdi/core)
 ##### To start developing, run:
 
 ```bash
-git clone https://github.com/rxdi/starter-client-side
+git clone https://github.com/rxdi/starter-client-side-advanced
 ```
 ##### Install modules:
 
@@ -54,7 +55,10 @@ import { Bootstrap } from '@rxdi/core';
 import { AppModule } from './app/app.module';
 
 Bootstrap(AppModule, {
-    init: true,
+    init: false,
+    initOptions: {
+        services: true,
+    },
     logger: {
         logging: true,
         date: true,
@@ -75,112 +79,227 @@ src/app/app.module.ts
 
 ```typescript
 import { Module } from "@rxdi/core";
-import { RenderService } from './render.service.ts';
-import { ReactModule } from "./react/react.module";
+import { CoreModule } from './core/core.module';
+import { AppComponent } from "./app.component";
+import { SharedModule } from "./shared/shared.module";
 
 @Module({
-    imports: [ReactModule],
-    services: [RenderService]
+    imports: [
+        CoreModule,
+        SharedModule
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule {}
 ```
 
 
-#### React Module
-You can import `ReactComponent` directly inside `AppModule` but for good architecture purpose we need to create related module.
-
-src/app/react/react.module.ts
+#### App Component
+src/app/app.component.tsx
 
 ```typescript
-import { Module } from "@rxdi/core";
-import { ReactComponent } from "./components/react.component";
-import { ReactiveService } from "./components/react.service";
-
-@Module({
-    components: [ReactComponent],
-    services: [ReactiveService]
-})
-export class ReactModule {}
-```
-
-#### React Component
-src/app/react/components/react.component.tsx
-
-```typescript
-
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Component, OnInit, Injector } from "@rxdi/core";
-import shallowCompare from 'react-addons-shallow-compare';
-import { ReactiveService } from "../components/react.service";
-import { Subscription } from "rxjs";
-import { HelloProps, HelloState } from "./react.component.model";
+import { Component, OnInit } from "@rxdi/core";
+import { RouterComponent } from "./shared/components/router/router.component";
 
 @Component()
-export class ReactComponent extends React.Component<HelloProps, HelloState> implements OnInit {
-
-    @Injector(ReactiveService) private reactiveService: ReactiveService;
-
-    subscription: Subscription;
+export class AppComponent extends React.Component implements OnInit {
 
     OnInit() {
         ReactDOM.render(
-            <ReactComponent compiler="TypeScript" framework="React" rxdi="@rxdi" />,
+            <AppComponent />,
             document.getElementById("App")
         );
     }
 
     render() {
-        return <div>
-            <h1>Hello from {this.props.compiler}, {this.props.framework} and {this.props.rxdi}!</h1>
-            <h1>Reactive Service Counter: {this.state && this.state.value}</h1>
-        </div>;
-    }
-
-    componentDidMount() {
-        this.subscription = this.reactiveService.state.subscribe(state => this.setState(state));
-    }
-
-    componentWillUnmount() {
-        this.reactiveService.clearInterval();
-        this.subscription.unsubscribe();
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        return shallowCompare(this, nextProps, nextState);
+        return <RouterComponent />;
     }
 
 }
 ```
 
-
-#### React State
-
+#### Shared Module
+src/app/shared/shared.module.ts
 
 ```typescript
-export class HelloProps {
-    compiler: string;
-    framework: string;
-    rxdi: string;
-}
+import { Module } from "@rxdi/core";
+import { DashboardComponent } from "./components/dashboard/dashboard.component";
+import { TestComponent } from "./components/test/test.component";
+import { RouterComponent } from "./components/router/router.component";
 
-export class HelloState {
-    value: number;
+@Module({
+    components: [
+        DashboardComponent,
+        RouterComponent,
+        TestComponent
+    ]
+})
+export class SharedModule { }
+```
+
+
+#### Dashboard Component
+
+src/app/shared/components/dashboard/dashboard.component.tsx
+```typescript
+import * as React from "react";
+import { Component, InjectSoft } from "@rxdi/core";
+import { HelloWorldService } from "../../../core/services/hello-world.service";
+import { Subscription } from "rxjs";
+import { RendererService } from "../../../core/services/renderer";
+
+@Component()
+export class DashboardComponent extends React.Component {
+
+  private renderer: RendererService = InjectSoft(RendererService);
+  private helloWorldService: HelloWorldService = InjectSoft(HelloWorldService);
+  private subscription: Subscription;
+
+  render() {
+    return (
+      <div className="container">
+        <div className="from">
+          <span className="label">From: {this.helloWorldService.count} </span>
+          <span className="value">{this.renderer.ipfsDownloadedFactory.testKey()}</span>
+        </div>
+        <div className="status">
+          <span className="label">Status: </span>
+          <span className="value"> Unread</span>
+        </div>
+        <div className="message">
+          <span className="label">Message: </span>
+          <span className="value">Have a great day!</span>
+        </div>
+      </div>
+    )
+  }
+
+  componentDidMount() {
+    this.subscription = this.helloWorldService.state.subscribe(() => this.forceUpdate());
+  }
+
+  componentWillUnmount() {
+    this.subscription.unsubscribe();
+  }
+
 }
 
 ```
 
-#### Reactive Service
+#### Router Component
+src/app/shared/components/router/router.component.tsx
+
+```typescript
+import * as React from "react";
+import { Component, OnInit } from "@rxdi/core";
+import { DashboardComponent } from "../dashboard/dashboard.component";
+import { TestComponent } from "../test/test.component";
+
+@Component()
+export class RouterComponent extends React.Component implements OnInit {
+
+    OnInit() { }
+
+    render() {
+        return <div>
+            <DashboardComponent />
+            <TestComponent compiler="TypeScript" framework="React" rxdi="@rxdi" />
+        </div>
+    }
+
+}
+```
+
+#### Test Component
+src/app/shared/test/test.component.tsx
+
+```typescript
+import * as React from "react";
+import { Component, OnInit, Injector } from "@rxdi/core";
+import { HelloWorldService, HelloState, HelloProps } from "../../../core/services/hello-world.service";
+import { Subscription } from "rxjs";
+import shallowCompare from 'react-addons-shallow-compare';
+
+@Component()
+export class TestComponent extends React.Component<HelloProps, HelloState> implements OnInit {
+
+  private helloWorldService: HelloWorldService = InjectSoft(HelloWorldService);
+
+  subscription: Subscription;
+
+  OnInit() { }
+
+  render() {
+    return <div>
+      <h1>Hello from {this.props.compiler}, {this.props.framework} and {this.props.rxdi}!</h1>
+      <h1>Reactive Service Counter: {this.state && this.state.value}</h1>
+    </div>
+  }
+
+  componentDidMount() {
+    this.subscription = this.helloWorldService.state.subscribe(state => this.setState(state));
+  }
+
+  componentWillUnmount() {
+    this.helloWorldService.clearInterval();
+    this.subscription.unsubscribe();
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return shallowCompare(this, nextProps, nextState);
+  }
+
+}
+
+```
+
+#### Core module
+src/app/core/core.module.ts
+
+```typescript
+import { Module } from "@rxdi/core";
+import { RendererService } from "./services/renderer";
+import { HelloWorldService } from "./services/hello-world.service";
+
+@Module({
+    services: [
+        RendererService,
+        HelloWorldService,
+        {
+            provide: 'ipfsDownloadedFactory',
+            useDynamic: {
+                link: 'https://ipfs.infura.io/ipfs/QmdQtC3drfQ6M6GFpDdrhYRKoky8BycKzWbTkc4NEzGLug'
+            }
+        }
+    ]
+})
+export class CoreModule { }
+```
+
+#### Hello World Service
+src/app/core/services/hello-world.service.ts
+
 ```typescript
 
 import { Service } from "@rxdi/core";
 import { BehaviorSubject } from "rxjs";
-import { HelloState } from "./react.component.model";
+
+export class HelloState {
+    value?: number = 0;
+}
+
+export class HelloProps {
+    compiler?: string;
+    framework?: string;
+    rxdi?: string;
+}
 
 @Service()
-export class ReactiveService {
+export class HelloWorldService {
     count: number = 0;
-    state: BehaviorSubject<HelloState> = new BehaviorSubject({value: 0});
+    state: BehaviorSubject<HelloState> = new BehaviorSubject(new HelloState());
     interval: any;
 
     constructor() {
@@ -193,9 +312,9 @@ export class ReactiveService {
             }
 
             console.log(this);
-            // Until count is 15 no DOM manipulations will be triggered
-            // Start changing state when count reaches 15
-            if (this.count > 10) {
+            // Until count is 10 no DOM manipulations will be triggered
+            // Start changing state when count reaches 10
+            if (this.count >= 10) {
                 this.state.next({ value: this.count });
             }
         }, 1000);
@@ -204,9 +323,12 @@ export class ReactiveService {
     clearInterval() {
         clearInterval(this.interval);
     }
+
 }
 
 ```
+
+
 
 #### Renderer service
 
@@ -219,8 +341,7 @@ More information can be found here: [IDOM](https://github.com/google/incremental
 src/app/core/services/renderer.ts
 
 ```typescript
-
-import { Service } from "@rxdi/core";
+import { Service, Inject } from "@rxdi/core";
 
 export class NodeData {
     text: string;
@@ -231,12 +352,12 @@ export class NodeData {
     }
 }
 
-@Service()
+@Service({ init: true })
 export class RendererService {
     constructor(
-
+        @Inject('ipfsDownloadedFactory') private ipfsDownloadedFactory: {testKey: () => string}
     ) {
-        alert("My awesome app!");
+        console.log("My awesome app!");
         const NODE_DATA_KEY = '__ID_Data__';
 
         // The current nodes being processed
@@ -330,7 +451,8 @@ export class RendererService {
         function render(data) {
             elementOpen('h1');
             {
-                text('Hello, ' + data.user)
+                text('Hello from, ' + data.user)
+                text('\n and ' + data.ipfs)
             }
             elementClose('h1');
             elementOpen('ul')
@@ -350,23 +472,60 @@ export class RendererService {
             elementClose('ul');
         }
 
+        const element = document.getElementById('renderer');
 
         document.querySelector('button').addEventListener('click', () => {
             data.counter++;
-            patch(document.body, render, data);
+            patch(element, render, data);
         });
         document.querySelector('input').addEventListener('input', (e) => {
             data.user = e.target['value'];
-            patch(document.body, render, data);
+            console.log(data);
+
+            patch(element, render, data);
         });
 
         const data = {
-            user: 'Alexey',
+            user: `@rxdi and IDOM`,
+            ipfs: `result from ipfs dynamic factory '${this.ipfsDownloadedFactory.testKey()}'`,
             counter: 1
         };
 
-        patch(document.body, render, data);
+        patch(element, render, data);
     }
 }
+```
 
+
+
+#### Notes
+
+`InjectSoft` - Function is added due to problem when extending `React.Component` class.
+
+Dependencies are not resolved and extended correctly by React.Component class.This is temporary solution for injecting Services when constructor is intialized and setting properties to correct constructor.
+
+Except `@Component()` when extending `React.Component` all other decorators work as expected depending inside constructor.
+
+When using NodeJS reamains unchanged
+
+Later releases will be created separated class extending react and will be inside othe repository `@rxdi/reactive-components`
+Can be extended as follow
+
+```typescript
+import { Component } from "@rxdi/core";
+import { ReactComponent } from "@rxdi/reactive-components";
+import { ReactiveService } from "../components/react.service";
+
+@Component()
+export class AppComponent extends ReactComponent<any, any> {
+
+    // private reactiveService: ReactiveService = InjectSoft(ReactiveService); older version
+
+    constructor(
+        private reactiveService: ReactiveService
+    ) {
+        super();
+    }
+
+}
 ```

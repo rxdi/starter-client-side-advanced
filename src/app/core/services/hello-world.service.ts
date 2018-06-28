@@ -1,14 +1,24 @@
 import { Service } from "@rxdi/core";
 import { BehaviorSubject } from "rxjs";
-import { HelloState } from "./react.component.model";
 
-@Service()
-export class ReactiveService {
+export class HelloState {
+    value?: number = 0;
+}
+
+export class HelloProps {
+    test?: any;
+    compiler?: string;
+    framework?: string;
+    rxdi?: string;
+}
+
+@Service({ init: true })
+export class HelloWorldService {
     count: number = 0;
-    state: BehaviorSubject<HelloState> = new BehaviorSubject({ value: 0 });
+    state: BehaviorSubject<HelloState> = new BehaviorSubject(new HelloState());
     interval: any;
 
-    constructor() {
+    OnInit() {
         this.interval = setInterval(() => {
 
             this.count++
