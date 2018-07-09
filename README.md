@@ -26,7 +26,7 @@ npm install
 
 For starting and building application we will use Parcel a new configuration-less web bundler [ParcelJS](https://parceljs.org/)
 
-This project is with added ReactJS and when builded for production bundle is less than 800Kb!!
+This project is with added ReactJS and when builded for production bundle is less than 300Kb!!
 
 To install parcel type:
 
