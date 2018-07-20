@@ -1,5 +1,5 @@
 {
-  "name": "@rxdi/starter-client",
+  "name": "@rxdi/starter-client-advanced",
   "version": "0.0.197",
   "main": "src/main.ts",
   "scripts": {
