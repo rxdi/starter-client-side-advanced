@@ -1,6 +1,6 @@
 {
   "name": "@rxdi/starter-client-advanced",
-  "version": "0.4.23",
+  "version": "0.4.24",
   "main": "src/main.ts",
   "scripts": {
     "start": "parcel ./src/index.html --target browser",
