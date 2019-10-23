@@ -10,7 +10,7 @@
   "author": "Kristiyan Tachev",
   "license": "MIT",
   "dependencies": {
-    "@rxdi/core": "^0.7.26",
+    "@rxdi/core": "^0.7.31",
     "react": "^16.4.1",
     "react-addons-shallow-compare": "^15.6.2",
     "react-dom": "^16.4.1"
